@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from llama_index.core import Settings as LlamaSettings
-from llama_index.core import VectorStoreIndex
+from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
 
 from app.config import Settings
 from app.ingestion.loader import load_documents
@@ -13,6 +15,8 @@ class RAGService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.index: VectorStoreIndex | None = None
+        self.client = QdrantClient(url=settings.qdrant_url)
+
         if settings.openai_api_key:
             LlamaSettings.llm = OpenAI(model=settings.openai_model, api_key=settings.openai_api_key)
             LlamaSettings.embed_model = OpenAIEmbedding(
@@ -25,7 +29,13 @@ class RAGService:
         if not documents:
             self.index = None
             return 0
-        self.index = VectorStoreIndex.from_documents(documents)
+
+        vector_store = QdrantVectorStore(
+            client=self.client,
+            collection_name=self.settings.qdrant_collection,
+        )
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        self.index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
         return len(documents)
 
     def query(self, question: str) -> dict:
