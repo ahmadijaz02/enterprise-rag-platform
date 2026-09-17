@@ -9,7 +9,7 @@ A modular document retrieval platform for searching private business documents t
 - Semantic vector retrieval
 - BM25 keyword retrieval
 - Hybrid retrieval with reciprocal-rank fusion
-- Optional cross-encoder reranking
+- Grounded answer generation using retrieved context
 - Source-aware responses
 - REST API for indexing and querying
 - Qdrant-backed vector storage
@@ -26,9 +26,6 @@ Documents -> Ingestion -> Chunking -> Embeddings -> Qdrant
                                       Hybrid Retrieval
                                                |
                                                v
-                                           Reranker
-                                               |
-                                               v
                                         Context Builder
                                                |
                                                v
@@ -40,7 +37,7 @@ Documents -> Ingestion -> Chunking -> Embeddings -> Qdrant
 
 ## Stack
 
-Python 3.11+, FastAPI, LlamaIndex, Qdrant, BM25, Sentence Transformers, Pydantic Settings and Docker.
+Python 3.11+, FastAPI, LlamaIndex, Qdrant, BM25, Pydantic Settings and Docker.
 
 ## Structure
 
@@ -48,9 +45,14 @@ Python 3.11+, FastAPI, LlamaIndex, Qdrant, BM25, Sentence Transformers, Pydantic
 app/
   config.py
   ingestion/
+    chunker.py
+    loader.py
   retrieval/
+    hybrid.py
   services/
+    rag_service.py
 api/
+  main.py
 data/sample/
 tests/
 .env.example
@@ -87,7 +89,7 @@ Open `/docs` for the interactive API documentation.
 
 `GET /health` checks service status.
 
-`POST /documents/index` indexes files from the configured data directory.
+`POST /documents/index` reads supported files from the configured data directory, chunks them, creates vector embeddings, stores vectors in Qdrant, and builds the keyword index.
 
 `POST /query` accepts:
 
@@ -95,11 +97,11 @@ Open `/docs` for the interactive API documentation.
 {"question":"What does the document say about leave policy?"}
 ```
 
-The query response contains the generated answer and source metadata.
+The query pipeline combines semantic and keyword retrieval, fuses the candidate rankings, builds a bounded context, and generates an answer constrained to that context. The response also includes source metadata.
 
 ## Configuration
 
-See `.env.example` for the available settings. The default local setup uses Qdrant and an OpenAI-compatible provider.
+See `.env.example` for the available settings. The default local setup uses Qdrant and OpenAI for embeddings and answer generation.
 
 ## Third-Party Components
 
