@@ -2,6 +2,8 @@ from pathlib import Path
 
 from llama_index.core import SimpleDirectoryReader
 
+from app.ingestion.chunker import get_chunker
+
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
 
 
@@ -12,4 +14,8 @@ def load_documents(data_dir: Path):
         return []
 
     reader = SimpleDirectoryReader(input_files=files, filename_as_id=True)
-    return reader.load_data()
+    documents = reader.load_data()
+    for document in documents:
+        document.metadata["source_file"] = document.metadata.get("file_name", document.doc_id)
+
+    return get_chunker().get_nodes_from_documents(documents)
