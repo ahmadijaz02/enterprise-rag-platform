@@ -1,15 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from app.config import get_settings
-from app.services.rag_service import RAGService
-
 app = FastAPI(
     title="Enterprise RAG Platform",
-    version="1.1.0",
+    version="1.1.1",
     description="Document ingestion and grounded question answering over a private document collection.",
 )
-service = RAGService(get_settings())
 
 
 class QueryRequest(BaseModel):
@@ -21,6 +17,13 @@ class QueryResponse(BaseModel):
     sources: list[dict]
 
 
+def get_service():
+    from app.config import get_settings
+    from app.services.rag_service import RAGService
+
+    return RAGService(get_settings())
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -29,7 +32,7 @@ def health() -> dict:
 @app.post("/documents/index")
 def index_documents() -> dict:
     try:
-        count = service.index_documents()
+        count = get_service().index_documents()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -40,7 +43,7 @@ def index_documents() -> dict:
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest) -> QueryResponse:
     try:
-        return service.query(request.question)
+        return get_service().query(request.question)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
