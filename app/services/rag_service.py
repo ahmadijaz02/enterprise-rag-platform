@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
-
 from llama_index.core import Settings as LlamaSettings
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -86,11 +84,12 @@ class RAGService:
             source = metadata.get("source_file") or metadata.get("file_name") or "unknown"
             context_parts.append(f"Source: {source}\n{node.get_content()}")
 
+        context = "\n\n".join(context_parts)
         prompt = (
             "Answer the user's question using only the provided context. "
             "If the context does not contain the answer, say that the information is not available. "
             "Do not invent facts.\n\n"
-            f"Context:\n{'\n\n'.join(context_parts)}\n\n"
+            f"Context:\n{context}\n\n"
             f"Question: {question}\nAnswer:"
         )
         response = LlamaSettings.llm.complete(prompt)
