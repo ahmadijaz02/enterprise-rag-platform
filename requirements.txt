@@ -6,6 +6,7 @@ qdrant-client>=1.14,<2.0
 llama-index-core>=0.14,<0.15
 llama-index-llms-openai>=0.6,<1.0
 llama-index-embeddings-openai>=0.5,<1.0
+llama-index-vector-stores-qdrant>=0.8,<1.0
 rank-bm25>=0.2.2,<1.0
 sentence-transformers>=3.4,<6.0
 pypdf>=5.0,<7.0
